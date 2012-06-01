@@ -18,6 +18,7 @@
             centeredX: true         // Should we center the image on the X axis?
           , centeredY: true         // Should we center the image on the Y axis?
           , speed: 0                // fadeIn speed for background after image loads (e.g. "fast" or 500)
+          , minWidth: 0		    // stop resizing once width drops below this value (px).
         }
       , $container = $("#backstretch")
       , settings = $container.data("settings") || defaultSettings // If this has been called once before, use the old settings as the default
@@ -161,20 +162,23 @@
               , rootHeight = useWindowInnerHeight ? window.innerHeight : rootElement.height()
               , bgHeight = bgWidth / imgRatio;
 
-                // Make adjustments based on image ratio
-                // Note: Offset code provided by Peter Baker (http://ptrbkr.com/). Thanks, Peter!
-                if(bgHeight >= rootHeight) {
-                    bgOffset = (bgHeight - rootHeight) /2;
-                    if(settings.centeredY) bgCSS.top = "-" + bgOffset + "px";
-                } else {
-                    bgHeight = rootHeight;
-                    bgWidth = bgHeight * imgRatio;
-                    bgOffset = (bgWidth - rootWidth) / 2;
-                    if(settings.centeredX) bgCSS.left = "-" + bgOffset + "px";
+                var resizeOverride = bgHeight < rootHeight;
+                if((rootWidth > 0 && rootWidth >= settings.minWidth) || resizeOverride){
+                    // Make adjustments based on image ratio
+                    // Note: Offset code provided by Peter Baker (http://ptrbkr.com/). Thanks, Peter!
+                    if(bgHeight >= rootHeight) {
+                        bgOffset = (bgHeight - rootHeight) /2;
+                        if(settings.centeredY) bgCSS.top = "-" + bgOffset + "px";
+                    } else {
+                        bgHeight = rootHeight;
+                        bgWidth = bgHeight * imgRatio;
+                        bgOffset = (bgWidth - rootWidth) / 2;
+                        if(settings.centeredX) bgCSS.left = "-" + bgOffset + "px";
+                    }
+    
+                    $container.css({width: rootWidth, height: rootHeight})
+                              .find("img:not(.deleteable)").css({width: bgWidth, height: bgHeight}).css(bgCSS);
                 }
-
-                $container.css({width: rootWidth, height: rootHeight})
-                          .find("img:not(.deleteable)").css({width: bgWidth, height: bgHeight}).css(bgCSS);
             } catch(err) {
                 // IE7 seems to trigger _adjustBG before the image is loaded.
                 // This try/catch block is a hack to let it fail gracefully.
